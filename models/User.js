@@ -2,10 +2,11 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
+  nome: { type: String, required: true, unique: false },
+  usuario: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  // Add other fields as needed (e.g., profile picture, bio, etc.)
+  senha: { type: String, required: true },
+  // Adicione outros campos conforme necessário (por exemplo, foto de perfil, biografia, etc.)
 });
 
 const User = mongoose.model("User", userSchema);
