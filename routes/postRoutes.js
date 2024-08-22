@@ -1,10 +1,10 @@
 const express = require("express");
-const roteador = express.Router();
-const controladorPostagem = require("../controllers/postController"); // Ajuste o caminho conforme necessário
+const router = express.Router();
+const postController = require("../controllers/postController"); // Ajuste o caminho conforme necessário
 
-roteador.post("/", controladorPostagem.criarPostagem);
-roteador.get("/", controladorPostagem.lerPostagens);
-roteador.put("/:id", controladorPostagem.atualizarPostagem);
-roteador.delete("/:id", controladorPostagem.deletarPostagem);
+router.post("/", postController.criarPostagem);
+router.get("/", postController.lerPostagens);
+router.put("/:id", postController.atualizarPostagem);
+router.delete("/:id", postController.deletarPostagem);
 
-module.exports = roteador;
+module.exports = router;

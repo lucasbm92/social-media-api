@@ -13,7 +13,6 @@ const connectDB = require("./database"); // Ajuste o caminho conforme necessári
 async function startServer() {
   try {
     await connectDB(); // Aguarda a conexão com o banco de dados
-    console.log("Conexão com o banco de dados estabelecida com sucesso!");
 
     // Rotas
     app.use("/users", userRoutes);
