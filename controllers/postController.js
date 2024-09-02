@@ -1,12 +1,38 @@
+const { MongoClient, ObjectId } = require("mongodb");
 const conectarDB = require("../database"); // Ajuste o caminho conforme necessário
-const { ObjectId } = require("mongodb");
 
 exports.criarPostagem = async (req, res) => {
   try {
+    const { titulo, conteudo, autor } = req.body;
+
     const db = await conectarDB();
-    const collection = db.collection("posts");
-    const resultado = await collection.insertOne(req.body);
-    res.status(201).send(resultado);
+    const usersCollection = db.collection("users");
+    const postsCollection = db.collection("posts");
+
+    // Verificar se o autor existe no banco de dados
+    const userExists = await usersCollection.findOne({
+      _id: new ObjectId(autor),
+    });
+
+    if (!userExists) {
+      return res.status(400).send({ mensagem: "ID de usuário inválido" });
+    }
+
+    const novaPostagem = {
+      titulo,
+      conteudo,
+      autor,
+      dataCriacao: new Date(),
+      likes: [],
+      comments: [],
+    };
+
+    await postsCollection.insertOne(novaPostagem);
+
+    res.status(201).send({
+      mensagem: "Postagem criada com sucesso",
+      postagem: novaPostagem,
+    });
   } catch (error) {
     res
       .status(500)

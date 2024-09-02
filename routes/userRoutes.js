@@ -5,5 +5,7 @@ const userController = require("../controllers/userController"); // Ajuste o cam
 
 router.post("/cadastro", userController.signup);
 router.post("/login", userController.login);
+router.put("/users/follow", userController.followUser);
+router.put("/users/unfollow", userController.unfollowUser);
 
 module.exports = router;

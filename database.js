@@ -3,7 +3,7 @@ const { MongoClient } = require("mongodb");
 
 const url = process.env.MONGO_URI;
 const client = new MongoClient(url);
-const dbName = "nomeDoSeuBanco";
+const dbName = "lukesocialmedia";
 
 async function conectar() {
   if (!client.topology || !client.topology.isConnected()) {
