@@ -1,14 +1,16 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
+const userController = require("./controllers/userController");
 
 // Importação de rotas
-const userRoutes = require("./routes/userRoutes"); // Ajuste o caminho conforme necessário
+const userRoutes = require("./routes/userRoutes");
 const postRoutes = require("./routes/postRoutes");
 
 app.use(express.json());
 
 // Conexão com o banco de dados
-const connectDB = require("./database"); // Ajuste o caminho conforme necessário
+const connectDB = require("./database");
 
 async function startServer() {
   try {
@@ -16,9 +18,9 @@ async function startServer() {
 
     // Rotas
     app.use("/users", userRoutes);
-    app.use("/posts", postRoutes);
+    app.use("/posts", postRoutes, postRoutes); // Protege as rotas post
 
-    // Defina outras rotas e middleware aqui
+    // Outras rotas e middleware aqui
 
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));

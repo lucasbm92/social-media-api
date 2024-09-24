@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const conectarDB = require("../database"); // Ajuste o caminho conforme necessário
 
 exports.signup = async (req, res) => {
@@ -54,19 +55,21 @@ exports.login = async (req, res) => {
     const db = await conectarDB();
     const collection = db.collection("users");
 
-    const user = await collection.findOne({ email });
-
-    if (!user) {
+    const usuario = await collection.findOne({ email });
+    if (!usuario) {
       return res.status(401).send({ mensagem: "Email ou senha incorretos" });
     }
 
-    const senhaValida = await bcrypt.compare(senha, user.senha);
-
+    const senhaValida = await bcrypt.compare(senha, usuario.senha);
     if (!senhaValida) {
       return res.status(401).send({ mensagem: "Email ou senha incorretos" });
     }
 
-    res.status(200).send({ mensagem: "Login bem-sucedido", userId: user._id });
+    const token = jwt.sign({ _id: usuario._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    res.header("Authorization", `Bearer ${token}`).send({
+      mensagem: "Login bem-sucedido",
+      token,
+    });
   } catch (error) {
     res
       .status(500)

@@ -1,22 +1,14 @@
+const jwt = require("jsonwebtoken");
 const { MongoClient, ObjectId } = require("mongodb");
 const conectarDB = require("../database"); // Ajuste o caminho conforme necessário
 
 exports.criarPostagem = async (req, res) => {
   try {
-    const { titulo, conteudo, autor } = req.body;
+    const { titulo, conteudo } = req.body; 
+    const autor = req.user._id; // Recebe o ID de usuário do token
 
     const db = await conectarDB();
-    const usersCollection = db.collection("users");
     const postsCollection = db.collection("posts");
-
-    // Verificar se o autor existe no banco de dados
-    const userExists = await usersCollection.findOne({
-      _id: new ObjectId(autor),
-    });
-
-    if (!userExists) {
-      return res.status(400).send({ mensagem: "ID de usuário inválido" });
-    }
 
     const novaPostagem = {
       titulo,
@@ -42,9 +34,14 @@ exports.criarPostagem = async (req, res) => {
 
 exports.lerPostagens = async (req, res) => {
   try {
+    const userId = req.user._id; // Recebe o ID de usuário do token
+
     const db = await conectarDB();
     const collection = db.collection("posts");
-    const postagens = await collection.find().toArray();
+
+    // Encontra as postagens do usuário logado
+    const postagens = await collection.find({ autor: userId }).toArray();
+
     res.status(200).send(postagens);
   } catch (error) {
     res
@@ -55,8 +52,17 @@ exports.lerPostagens = async (req, res) => {
 
 exports.atualizarPostagem = async (req, res) => {
   try {
+    const userId = req.user._id; // Recebe o ID de usuário do token
+
     const db = await conectarDB();
     const collection = db.collection("posts");
+
+    // Checa se a postagem existe e pertence ao usuário
+    const post = await collection.findOne({ _id: ObjectId(req.params.id) });
+    if (!post || post.autor !== userId) {
+      return res.status(403).send({ mensagem: "Acesso negado" });
+    }
+
     const resultado = await collection.updateOne(
       { _id: ObjectId(req.params.id) },
       { $set: req.body }
@@ -71,8 +77,17 @@ exports.atualizarPostagem = async (req, res) => {
 
 exports.deletarPostagem = async (req, res) => {
   try {
+    const userId = req.user._id; // Recebe o ID de usuário do token
+
     const db = await conectarDB();
     const collection = db.collection("posts");
+
+    // Checa se a postagem existe e pertence ao usuário
+    const post = await collection.findOne({ _id: ObjectId(req.params.id) });
+    if (!post || post.autor !== userId) {
+      return res.status(403).send({ mensagem: "Acesso negado" });
+    }
+
     const resultado = await collection.deleteOne({
       _id: ObjectId(req.params.id),
     });
@@ -86,66 +101,72 @@ exports.deletarPostagem = async (req, res) => {
 
 exports.likePost = async (req, res) => {
   try {
+    const userId = req.user._id; // Recebe o ID de usuário do token
+
     const { postId } = req.params;
-    const { userId } = req.body;
 
     const db = await conectarDB();
     const collection = db.collection("posts");
 
-    await collection.updateOne(
-      { _id: new ObjectId(postId) },
+    // Adiciona o ID do usuário ao array de likes
+    const resultado = await collection.updateOne(
+      { _id: ObjectId(postId) },
       { $addToSet: { likes: userId } }
     );
 
-    res.status(200).send({ mensagem: "Post curtido com sucesso" });
+    res.status(200).send({ mensagem: "Postagem curtida com sucesso", resultado });
   } catch (error) {
     res
       .status(500)
-      .send({ mensagem: "Erro ao curtir post", error: error.message });
+      .send({ mensagem: "Erro ao curtir postagem", error: error.message });
   }
 };
 
 exports.unlikePost = async (req, res) => {
   try {
+    const userId = req.user._id; // Recebe o ID de usuário do token
+
     const { postId } = req.params;
-    const { userId } = req.body;
 
     const db = await conectarDB();
     const collection = db.collection("posts");
 
-    await collection.updateOne(
-      { _id: new ObjectId(postId) },
+    // Remove o ID do usuário do array de likes
+    const resultado = await collection.updateOne(
+      { _id: ObjectId(postId) },
       { $pull: { likes: userId } }
     );
 
-    res.status(200).send({ mensagem: "Post descurtido com sucesso" });
+    res.status(200).send({ mensagem: "Postagem descurtida com sucesso", resultado });
   } catch (error) {
     res
       .status(500)
-      .send({ mensagem: "Erro ao descurtir post", error: error.message });
+      .send({ mensagem: "Erro ao descurtir postagem", error: error.message });
   }
 };
-
 exports.addComment = async (req, res) => {
   try {
+    const userId = req.user._id; // Recebe o ID de usuário do token
+
     const { postId } = req.params;
-    const { userId, comentario } = req.body;
+    const { texto } = req.body;
 
     const db = await conectarDB();
     const collection = db.collection("posts");
 
-    const novoComentario = {
-      userId,
-      comentario,
-      dataComentario: new Date(),
+    const comentario = {
+      autor: userId,
+      texto,
+      dataCriacao: new Date(),
     };
 
-    await collection.updateOne(
-      { _id: new ObjectId(postId) },
-      { $push: { comments: novoComentario } }
+    // Adiciona o comentário ao array de comentários
+    const resultado = await collection.updateOne(
+      { _id: ObjectId(postId) },
+      { $push: { comments: comentario } }
     );
 
-    res.status(200).send({ mensagem: "Comentário adicionado com sucesso" });
+    res.status(200).send({ mensagem: "Comentário adicionado com sucesso", resultado });
   } catch (error) {
     res
       .status(500)
@@ -155,17 +176,28 @@ exports.addComment = async (req, res) => {
 
 exports.removeComment = async (req, res) => {
   try {
+    const userId = req.user._id; // Recebe o ID de usuário do token
+
     const { postId, commentId } = req.params;
 
     const db = await conectarDB();
     const collection = db.collection("posts");
 
-    await collection.updateOne(
-      { _id: new ObjectId(postId) },
-      { $pull: { comments: { _id: new ObjectId(commentId) } } }
+    // Checa se o comentário existe e pertence ao usuário
+    const post = await collection.findOne({ _id: ObjectId(postId) });
+    const comment = post.comments.find(comment => comment._id.equals(ObjectId(commentId)));
+
+    if (!comment || comment.autor !== userId) {
+      return res.status(403).send({ mensagem: "Acesso negado" });
+    }
+
+    // Remove o comentário do array de comentários
+    const resultado = await collection.updateOne(
+      { _id: ObjectId(postId) },
+      { $pull: { comments: { _id: ObjectId(commentId) } } }
     );
 
-    res.status(200).send({ mensagem: "Comentário removido com sucesso" });
+    res.status(200).send({ mensagem: "Comentário removido com sucesso", resultado });
   } catch (error) {
     res
       .status(500)
