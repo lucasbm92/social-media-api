@@ -1,13 +1,35 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
-const userController = require("./controllers/userController");
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsDoc = require("swagger-jsdoc");
 
 // Importação de rotas
 const userRoutes = require("./routes/userRoutes");
 const postRoutes = require("./routes/postRoutes");
 
 app.use(express.json());
+
+// Root route
+app.get("/", (req, res) => {
+  res.send("Welcome to the Social Media API!");
+});
+
+// Configuração do Swagger
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Social Media API",
+      version: "1.0.0",
+      description: "API documentation for the Social Media API",
+    },
+  },
+  apis: ["./routes/*.js"], // Path to your route files
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Conexão com o banco de dados
 const connectDB = require("./database");
@@ -18,7 +40,7 @@ async function startServer() {
 
     // Rotas
     app.use("/users", userRoutes);
-    app.use("/posts", postRoutes, postRoutes); // Protege as rotas post
+    app.use("/posts", postRoutes);
 
     // Outras rotas e middleware aqui
 

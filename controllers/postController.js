@@ -34,13 +34,11 @@ exports.criarPostagem = async (req, res) => {
 
 exports.lerPostagens = async (req, res) => {
   try {
-    const userId = req.user._id; // Recebe o ID de usuário do token
-
     const db = await conectarDB();
     const collection = db.collection("posts");
 
-    // Encontra as postagens do usuário logado
-    const postagens = await collection.find({ autor: userId }).toArray();
+    // Retrieve all posts
+    const postagens = await collection.find({}).toArray();
 
     res.status(200).send(postagens);
   } catch (error) {
